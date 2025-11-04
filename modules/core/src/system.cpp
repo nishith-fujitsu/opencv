@@ -424,6 +424,7 @@ struct HWFeatures
         g_hwFeatureNames[CPU_AVX_5124FMAPS] = "AVX5124FMAPS";
 
         g_hwFeatureNames[CPU_NEON] = "NEON";
+        g_hwFeatureNames[CPU_SVE] = "SVE";
         g_hwFeatureNames[CPU_NEON_DOTPROD] = "NEON_DOTPROD";
         g_hwFeatureNames[CPU_NEON_FP16] = "NEON_FP16";
         g_hwFeatureNames[CPU_NEON_BF16] = "NEON_BF16";
@@ -574,6 +575,7 @@ struct HWFeatures
     #if defined __ANDROID__ || defined __linux__ || defined __QNX__
     #ifdef __aarch64__
         have[CV_CPU_NEON] = true;
+        have[CV_CPU_SVE] = false;
         have[CV_CPU_FP16] = true;
         int cpufile = open("/proc/self/auxv", O_RDONLY);
 
@@ -587,6 +589,7 @@ struct HWFeatures
                 // see https://elixir.bootlin.com/linux/latest/source/arch/arm64/include/uapi/asm/hwcap.h
                 if (auxv.a_type == AT_HWCAP)
                 {
+                    have[CV_CPU_SVE] = (auxv.a_un.a_val & (1 << 22)) != 0; // HWCAP_SVE
                     have[CV_CPU_NEON_DOTPROD] = (auxv.a_un.a_val & (1 << 20)) != 0; // HWCAP_ASIMDDP
                     have[CV_CPU_NEON_FP16] = (auxv.a_un.a_val & (1 << 10)) != 0; // HWCAP_ASIMDHP
                 }
@@ -668,6 +671,9 @@ struct HWFeatures
     #elif (defined __clang__)
     #if defined __ARM_NEON
         have[CV_CPU_NEON] = true;
+        #if defined __ARM_FEATURE_SVE
+        have[CV_CPU_SVE] = true;
+        #endif
         #if (defined __ARM_FP  && ((__ARM_FP & 0x2) != 0))
         have[CV_CPU_FP16] = true;
         #endif
